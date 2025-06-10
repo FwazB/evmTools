@@ -1,5 +1,65 @@
 {
+  "name": "ethereum-tools",
+  "version": "1.0.0",
+  "description": "A collection of powerful Ethereum blockchain analysis tools built with Viem and TypeScript",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "build:watch": "tsc --watch",
+    "snapshot": "tsx erc721snapshot.ts",
+    "portfolio": "tsx erc20portfoliotracker.ts",
+    "snapshot:js": "node dist/erc721snapshot.js",
+    "portfolio:js": "node dist/erc20portfoliotracker.js",
+    "dev": "tsx --watch",
+    "clean": "rm -rf dist",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint src/**/*.ts",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "ethereum",
+    "blockchain",
+    "nft",
+    "erc721",
+    "erc20",
+    "portfolio",
+    "viem",
+    "web3",
+    "defi",
+    "snapshot",
+    "airdrop",
+    "typescript"
+  ],
+  "author": "Your Name",
+  "license": "MIT",
   "dependencies": {
-    "viem": "^2.31.0"
-  }
+    "viem": "^2.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "@typescript-eslint/eslint-plugin": "^6.0.0",
+    "@typescript-eslint/parser": "^6.0.0",
+    "eslint": "^8.0.0",
+    "tsx": "^4.0.0",
+    "typescript": "^5.0.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/yourusername/ethereum-tools"
+  },
+  "bugs": {
+    "url": "https://github.com/yourusername/ethereum-tools/issues"
+  },
+  "homepage": "https://github.com/yourusername/ethereum-tools#readme",
+  "files": [
+    "dist/**/*",
+    "src/**/*",
+    "*.ts",
+    "README.md",
+    "LICENSE"
+  ]
 }
