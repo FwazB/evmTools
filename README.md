@@ -15,7 +15,7 @@ Track token balances and portfolio values across multiple Ethereum addresses.
 ## 🚀 Quick Start
 
 ### Prerequisites
-- Node.js v16 or higher
+- Node.js v18 or higher (for native fetch support)
 - npm or yarn package manager
 
 ### Installation
@@ -28,14 +28,12 @@ cd ethereum-tools
 
 2. **Install dependencies**
 ```bash
-npm install viem
-# For portfolio tracker that uses price data:
-npm install node-fetch  # if using Node.js < 18
+npm install
 ```
 
 3. **Set up RPC endpoints**
 - Get a free API key from [Alchemy](https://www.alchemy.com/), [Infura](https://infura.io/), or [QuickNode](https://www.quicknode.com/)
-- Update the RPC URLs in the respective files
+- Update the RPC URLs in the respective TypeScript files
 
 ---
 
@@ -51,8 +49,8 @@ npm install node-fetch  # if using Node.js < 18
 ### Usage
 
 1. **Configure the contract**
-```javascript
-// Edit erc721snapshot.js
+```typescript
+// Edit erc721snapshot.ts
 const contractAddress = "0x67266b806a2987ef6dfaf6355ccd62c29978dbf9"; // Your NFT contract
 const client = createPublicClient({
   chain: mainnet,
@@ -62,7 +60,12 @@ const client = createPublicClient({
 
 2. **Run the snapshot**
 ```bash
-node erc721snapshot.js
+# Direct TypeScript execution
+npm run snapshot
+
+# Or compile first then run
+npm run build
+npm run snapshot:js
 ```
 
 ### Example Output
@@ -109,17 +112,16 @@ Snapshot complete: {
 ### Usage
 
 1. **Configure your setup**
-```javascript
-// Edit erc20portfoliotracker.js
-const client = createPublicClient({
-  chain: mainnet,
-  transport: http("https://eth-mainnet.g.alchemy.com/v2/YOUR-API-KEY")
-});
+```typescript
+// Edit portfolio-tracker.ts
+const config: TrackerConfig = {
+  rpcUrl: "https://eth-mainnet.g.alchemy.com/v2/YOUR-API-KEY"
+};
+const tracker = new PortfolioTracker(config);
 ```
 
 2. **Add your wallets**
-```javascript
-const tracker = new PortfolioTracker();
+```typescript
 tracker.addWallet("0x742d35Cc6634C0532925a3b8D3Ac28E4FbC7C6e6", "Main Wallet");
 tracker.addWallet("0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045", "DeFi Wallet");
 tracker.addWallet("0x8ba1f109551bD432803012645Hac136c22C57B9a", "Trading Wallet");
@@ -127,7 +129,12 @@ tracker.addWallet("0x8ba1f109551bD432803012645Hac136c22C57B9a", "Trading Wallet"
 
 3. **Run the tracker**
 ```bash
-node erc20portfoliotracker.js
+# Direct TypeScript execution
+npm run portfolio
+
+# Or compile first then run
+npm run build
+npm run portfolio:js
 ```
 
 ### Example Output
@@ -168,10 +175,13 @@ LINK     1250.500000     $12.50       $15,631.25     12.45%
 ```
 
 ### Programmatic Usage
-```javascript
-const PortfolioTracker = require('./erc20portfoliotracker.js');
+```typescript
+import { PortfolioTracker, type TrackerConfig } from './portfolio-tracker.js';
 
-const tracker = new PortfolioTracker();
+const config: TrackerConfig = {
+  rpcUrl: "https://your-rpc-endpoint.com"
+};
+const tracker = new PortfolioTracker(config);
 tracker.addWallet("0x...", "My Wallet");
 
 // Get raw portfolio data

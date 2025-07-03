@@ -149,7 +149,7 @@ class PortfolioTracker {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
       
-      const data = await response.json();
+      const data = await response.json() as Record<string, { usd?: number }>;
       const price = data[coingeckoId]?.usd || 0;
       this.priceCache[tokenSymbol] = price;
       return price;
@@ -420,36 +420,37 @@ class PortfolioTracker {
 }
 
 // Usage example
-async function main(): Promise<void> {
-  const config: TrackerConfig = {
-    rpcUrl: "https://eth-mainnet.g.alchemy.com/v2/YOUR-API-KEY",
-    customTokens: {
-      // Add custom tokens if needed
-      // CUSTOM: { address: "0x...", decimals: 18, symbol: "CUSTOM" }
-    }
-  };
+// Uncomment and modify to run
+// async function main(): Promise<void> {
+//   const config: TrackerConfig = {
+//     rpcUrl: "https://eth-mainnet.g.alchemy.com/v2/YOUR-API-KEY",
+//     customTokens: {
+//       // Add custom tokens if needed
+//       // CUSTOM: { address: "0x...", decimals: 18, symbol: "CUSTOM" }
+//     }
+//   };
 
-  const tracker = new PortfolioTracker(config);
+//   const tracker = new PortfolioTracker(config);
   
-  // Add your wallet addresses here
-  tracker.addWallet("0x742d35Cc6634C0532925a3b8D3Ac28E4FbC7C6e6" as Address, "Main Wallet");
-  tracker.addWallet("0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045" as Address, "DeFi Wallet");
-  tracker.addWallet("0x8ba1f109551bD432803012645Hac136c22C57B9a" as Address, "Trading Wallet");
+//   // Add your wallet addresses here
+//   tracker.addWallet("0x742d35Cc6634C0532925a3b8D3Ac28E4FbC7C6e6", "Main Wallet");
+//   tracker.addWallet("0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045", "DeFi Wallet");
+//   tracker.addWallet("0x8ba1f109551bD432803012645Hac136c22C57B9a", "Trading Wallet");
   
-  try {
-    await tracker.displayPortfolio();
+//   try {
+//     await tracker.displayPortfolio();
     
-    // Export data
-    const jsonExport = tracker.exportToJSON("portfolio-snapshot.json");
+//     // Export data
+//     tracker.exportToJSON("portfolio-snapshot.json");
     
-    // Get stats
-    const stats = tracker.getPortfolioStats();
-    console.log("\n📊 Portfolio Stats:", stats);
+//     // Get stats
+//     const stats = tracker.getPortfolioStats();
+//     console.log("\nPortfolio Stats:", stats);
     
-  } catch (error) {
-    console.error("Error tracking portfolio:", error);
-  }
-}
+//   } catch (error) {
+//     console.error("Error tracking portfolio:", error);
+//   }
+// }
 
 // Uncomment to run
 // main();

@@ -2,6 +2,7 @@
   "name": "ethereum-tools",
   "version": "1.0.0",
   "description": "A collection of powerful Ethereum blockchain analysis tools built with Viem and TypeScript",
+  "type": "module",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {

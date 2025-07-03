@@ -1,26 +1,25 @@
-import { createPublicClient, http, Address, PublicClient } from "viem";
+import { createPublicClient, http, type Address } from "viem";
 import { mainnet } from "viem/chains";
 
 // Types
 interface NFTSnapshot {
-  [address: Address]: number;
+  [address: string]: number;
 }
 
 interface SnapshotConfig {
-  contractAddress: Address;
+  contractAddress: string;
   rpcUrl: string;
   startTokenId?: number;
   endTokenId?: number;
 }
 
-// Client setup
-const client: PublicClient = createPublicClient({
-  chain: mainnet,
-  transport: http("https://api.mainnet.abs.xyz")
-});
+// These are examples - actual configuration happens in the SnapshotTool constructor
+// const client = createPublicClient({
+//   chain: mainnet,
+//   transport: http("https://api.mainnet.abs.xyz")
+// });
 
-// Contract configuration
-const contractAddress: Address = "0x67266b806a2987ef6dfaf6355ccd62c29978dbf9";
+// const contractAddress: string = "0x67266b806a2987ef6dfaf6355ccd62c29978dbf9";
 
 // ERC-721 ABI
 const ERC721_ABI = [
@@ -41,8 +40,8 @@ const ERC721_ABI = [
 ] as const;
 
 class NFTSnapshotTool {
-  private client: PublicClient;
-  private contractAddress: Address;
+  private client: ReturnType<typeof createPublicClient>;
+  private contractAddress: string;
 
   constructor(config: SnapshotConfig) {
     this.contractAddress = config.contractAddress;
@@ -58,7 +57,7 @@ class NFTSnapshotTool {
   async getTotalSupply(): Promise<bigint> {
     try {
       const totalSupply = await this.client.readContract({
-        address: this.contractAddress,
+        address: this.contractAddress as Address,
         abi: ERC721_ABI,
         functionName: "totalSupply"
       });
@@ -72,15 +71,15 @@ class NFTSnapshotTool {
   /**
    * Get the owner of a specific token ID
    */
-  async getTokenOwner(tokenId: bigint): Promise<Address | null> {
+  async getTokenOwner(tokenId: bigint): Promise<string | null> {
     try {
       const owner = await this.client.readContract({
-        address: this.contractAddress,
+        address: this.contractAddress as Address,
         abi: ERC721_ABI,
         functionName: "ownerOf",
         args: [tokenId]
       });
-      return owner as Address;
+      return owner as string;
     } catch (error) {
       // Token might not exist or be burned
       return null;
@@ -93,7 +92,7 @@ class NFTSnapshotTool {
   async createSnapshot(startId?: number, endId?: number): Promise<NFTSnapshot> {
     console.log("🔄 Starting NFT snapshot...");
     
-    const holders: NFTSnapshot = {};
+    const holders: { [address: string]: number } = {};
     let totalSupply: bigint;
 
     try {
@@ -120,7 +119,7 @@ class NFTSnapshotTool {
       const owner = await this.getTokenOwner(i);
       
       if (owner) {
-        holders[owner] = (holders[owner] || 0) + 1;
+        holders[owner as string] = (holders[owner as string] || 0) + 1;
       } else {
         console.log(`Token ${i} may not exist or is burned`);
       }
@@ -132,7 +131,7 @@ class NFTSnapshotTool {
   /**
    * Display snapshot results in a formatted way
    */
-  displaySnapshot(snapshot: NFTSnapshot): void {
+  displaySnapshot(snapshot: { [address: string]: number }): void {
     const totalHolders = Object.keys(snapshot).length;
     const totalTokens = Object.values(snapshot).reduce((sum, count) => sum + count, 0);
 
@@ -165,7 +164,7 @@ class NFTSnapshotTool {
   /**
    * Export snapshot to JSON
    */
-  exportToJSON(snapshot: NFTSnapshot, filename?: string): string {
+  async exportToJSON(snapshot: { [address: string]: number }, filename?: string): Promise<string> {
     const exportData = {
       timestamp: new Date().toISOString(),
       contractAddress: this.contractAddress,
@@ -177,20 +176,53 @@ class NFTSnapshotTool {
     const jsonString = JSON.stringify(exportData, null, 2);
     
     if (filename) {
-      // In a real implementation, you'd write to file here
-      console.log(`\nSnapshot exported to ${filename}`);
+      try {
+        // Write to file using Node.js fs module
+        const fs = await import('fs/promises');
+        await fs.writeFile(filename, jsonString, 'utf8');
+        console.log(`\n💾 Snapshot exported to ${filename}`);
+      } catch (error) {
+        console.error(`Failed to write file ${filename}:`, error);
+        console.log(`\n📋 JSON data:\n${jsonString}`);
+      }
     }
 
     return jsonString;
   }
 
   /**
+   * Export snapshot to CSV
+   */
+  async exportToCSV(snapshot: { [address: string]: number }, filename?: string): Promise<string> {
+    const headers = "Address,Token Count\n";
+    const rows = Object.entries(snapshot)
+      .sort(([, a], [, b]) => b - a) // Sort by token count descending
+      .map(([address, count]) => `${address},${count}`)
+      .join('\n');
+    
+    const csvString = headers + rows;
+    
+    if (filename) {
+      try {
+        const fs = await import('fs/promises');
+        await fs.writeFile(filename, csvString, 'utf8');
+        console.log(`\n📊 CSV exported to ${filename}`);
+      } catch (error) {
+        console.error(`Failed to write CSV file ${filename}:`, error);
+        console.log(`\n📋 CSV data:\n${csvString}`);
+      }
+    }
+
+    return csvString;
+  }
+
+  /**
    * Get holders eligible for airdrop (with minimum token requirement)
    */
-  getAirdropEligible(snapshot: NFTSnapshot, minTokens: number = 1): Address[] {
+  getAirdropEligible(snapshot: { [address: string]: number }, minTokens: number = 1): string[] {
     return Object.entries(snapshot)
       .filter(([, count]) => count >= minTokens)
-      .map(([address]) => address as Address);
+      .map(([address]) => address as string);
   }
 }
 
@@ -200,7 +232,7 @@ async function main(): Promise<void> {
     contractAddress: "0x67266b806a2987ef6dfaf6355ccd62c29978dbf9",
     rpcUrl: "https://api.mainnet.abs.xyz"
   };
-
+  
   const snapshotTool = new NFTSnapshotTool(config);
 
   try {
@@ -211,11 +243,14 @@ async function main(): Promise<void> {
     snapshotTool.displaySnapshot(snapshot);
     
     // Export to JSON
-    const jsonExport = snapshotTool.exportToJSON(snapshot, "nft-snapshot.json");
+    await snapshotTool.exportToJSON(snapshot, "nft-snapshot.json");
     
-    // Get airdrop eligible addresses (holders with 2+ tokens)
-    const airdropEligible = snapshotTool.getAirdropEligible(snapshot, 2);
-    console.log(`\nAddresses eligible for airdrop (2+ tokens): ${airdropEligible.length}`);
+    // Export to CSV
+    await snapshotTool.exportToCSV(snapshot, "nft-snapshot.csv");
+    
+    // Get airdrop eligible addresses (holders with 3+ tokens)
+    const airdropEligible = snapshotTool.getAirdropEligible(snapshot, 3);
+    console.log(`\nAddresses eligible for airdrop (3+ tokens): ${airdropEligible.length}`);
     
   } catch (error) {
     console.error("Error creating snapshot:", error);

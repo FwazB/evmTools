@@ -1,9 +1,9 @@
-import { createPublicClient, http, formatEther, formatUnits, Address, PublicClient } from "viem";
+import { createPublicClient, http, formatEther, formatUnits, type Address } from "viem";
 import { mainnet } from "viem/chains";
 
 // Types and Interfaces
 interface TokenConfig {
-  address: Address | null;
+  address: string | null;
   decimals: number;
   symbol: string;
 }
@@ -15,7 +15,7 @@ interface TokenBalance {
 }
 
 interface WalletConfig {
-  address: Address;
+  address: string;
   label: string;
 }
 
@@ -24,7 +24,7 @@ interface WalletBalances {
 }
 
 interface WalletDetails {
-  address: Address;
+  address: string;
   label: string;
   balances: WalletBalances;
 }
@@ -98,7 +98,7 @@ const ERC20_ABI = [
 ] as const;
 
 class PortfolioTracker {
-  private client: PublicClient;
+  private client: ReturnType<typeof createPublicClient>;
   private wallets: WalletConfig[] = [];
   private portfolioData: PortfolioData = { aggregatedBalances: {}, walletDetails: [] };
   private priceCache: PriceCache = {};
@@ -117,8 +117,8 @@ class PortfolioTracker {
   /**
    * Add a wallet to track
    */
-  addWallet(address: Address, label: string = ""): void {
-    this.wallets.push({ address: address.toLowerCase() as Address, label });
+  addWallet(address: string, label: string = ""): void {
+    this.wallets.push({ address: address.toLowerCase(), label });
   }
 
   /**
@@ -139,7 +139,7 @@ class PortfolioTracker {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
       
-      const data = await response.json();
+      const data = await response.json() as Record<string, { usd?: number }>;
       const price = data[coingeckoId]?.usd || 0;
       this.priceCache[tokenSymbol] = price;
       return price;
@@ -163,9 +163,9 @@ class PortfolioTracker {
     return mapping[symbol] || symbol.toLowerCase();
   }
 
-  private async getETHBalance(address: Address): Promise<string> {
+  private async getETHBalance(address: string): Promise<string> {
     try {
-      const balance = await this.client.getBalance({ address });
+      const balance = await this.client.getBalance({ address: address as Address });
       return formatEther(balance);
     } catch (error) {
       console.warn(`Failed to get ETH balance for ${address}:`, error);
@@ -173,13 +173,13 @@ class PortfolioTracker {
     }
   }
 
-  private async getTokenBalance(tokenAddress: Address, walletAddress: Address): Promise<bigint> {
+  private async getTokenBalance(tokenAddress: string, walletAddress: string): Promise<bigint> {
     try {
       const balance = await this.client.readContract({
-        address: tokenAddress,
+        address: tokenAddress as Address,
         abi: ERC20_ABI,
         functionName: "balanceOf",
-        args: [walletAddress]
+        args: [walletAddress as Address]
       });
       return balance;
     } catch (error) {
@@ -188,7 +188,7 @@ class PortfolioTracker {
     }
   }
 
-  private async getWalletBalances(walletAddress: Address): Promise<WalletBalances> {
+  private async getWalletBalances(walletAddress: string): Promise<WalletBalances> {
     const balances: WalletBalances = {};
     
     // Get ETH balance
@@ -342,21 +342,22 @@ class PortfolioTracker {
 }
 
 // Usage example
-async function main(): Promise<void> {
-  const config: TrackerConfig = {
-    rpcUrl: "https://eth-mainnet.g.alchemy.com/v2/YOUR-API-KEY"
-  };
+// Uncomment and modify to run
+// async function main(): Promise<void> {
+//   const config: TrackerConfig = {
+//     rpcUrl: "https://eth-mainnet.g.alchemy.com/v2/YOUR-API-KEY"
+//   };
 
-  const tracker = new PortfolioTracker(config);
+//   const tracker = new PortfolioTracker(config);
   
-  tracker.addWallet("0x742d35Cc6634C0532925a3b8D3Ac28E4FbC7C6e6" as Address, "Main Wallet");
-  tracker.addWallet("0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045" as Address, "DeFi Wallet");
+//   tracker.addWallet("0x742d35Cc6634C0532925a3b8D3Ac28E4FbC7C6e6", "Main Wallet");
+//   tracker.addWallet("0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045", "DeFi Wallet");
   
-  try {
-    await tracker.displayPortfolio();
-  } catch (error) {
-    console.error("Error tracking portfolio:", error);
-  }
-}
+//   try {
+//     await tracker.displayPortfolio();
+//   } catch (error) {
+//     console.error("Error tracking portfolio:", error);
+//   }
+// }
 
 export { PortfolioTracker, type TokenConfig, type TrackerConfig }; 
